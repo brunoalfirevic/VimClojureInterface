@@ -1,8 +1,13 @@
+import string
+import os
+from itertools import chain
+from glob import glob
 from ctypes import *
 
 #platform dependent calling convention definitions
 JNIFUNCTYPE = WINFUNCTYPE
 dll_loader  = windll
+path_separator = ';'
 
 #platform dependent data type definitions
 jint  = c_long
@@ -68,6 +73,16 @@ JNI_ENOMEM    =   -4              #not enough memory
 JNI_EEXIST    =   -5              #VM already created
 JNI_EINVAL    =   -6              #invalid arguments
 
+#exceptions
+class PyJniError(Exception):
+    pass
+
+class JNIError(PyJniError):
+    pass
+
+class JavaInvocationError(PyJniError):
+    pass
+
 #structure definitions
 class JavaVMOption(Structure):
     _fields_ = [("optionString", c_char_p), ("extraInfo", c_void_p)]
@@ -93,44 +108,89 @@ class JNIEnv(Structure):
     def ExceptionDescribe(self):
         self.__getFunc(16, None)()
 
+    def ExceptionCheck(self):
+        return self.__getFunc(228, jboolean)()
+
+    def ExceptionClear(self):
+        return self.__getFunc(17, None)()
+
     def GetStaticMethodID(self, clazz, name, sig):
         return self.__getFunc(113, jmethodID, jclass, c_char_p, c_char_p)(clazz, name, sig)
 
-    def ExceptionCheck(self):
-        return self.__getFunc(228, jboolean)()
-    
     def RegisterNatives(self, clazz, methods, n_methods):
         return self.__getFunc(215, jint, jclass, POINTER(JNINativeMethod), jint)(clazz, methods, n_methods)
 
-    def CallStaticIntMethodA(self, clazz, method_id, args):
-        return self.__getFunc(131, jint, jclass, jmethodID, c_void_p)(clazz, method_id, args)
+    def CallStaticObjectMethodA(self, clazz, method_id, args):
+        return self.__getFunc(116, jobject, jclass, jmethodID, c_void_p)(clazz, method_id, args)
+                                
+    def PushLocalFrame(self, capacity):
+        return self.__getFunc(19, jint, jint)(capacity)
+
+    def PopLocalFrame(self, result):
+        return self.__getFunc(20, jobject, jobject)(result)
+
+    def NewStringUTF(self, chars):
+        if chars == None:
+            return None
+        return self.__getFunc(167, jstring, c_char_p)(chars)
+
+    def GetStringUTFChars(self, str, is_copy):
+        return self.__getFunc(169, c_char_p, jstring, POINTER(jboolean))(str, is_copy)
+        
+    def ReleaseStringUTFChars(self, str, utf):
+        return self.__getFunc(170, None, jstring, c_char_p)(str, utf)
+
+    def GetPythonString(self, jvmstring):
+        if jvmstring == None:
+            return None
+        
+        chars = self.GetStringUTFChars(jvmstring, None)
+        try:
+            result = str(chars)
+        finally:
+            self.ReleaseStringUTFChars(jvmstring, chars)
+
+        return result
 
     def __getFunc(self, index, return_type, *types):
         return lambda *vals: JNIFUNCTYPE(return_type, POINTER(JNIEnv), *types)(self.functions[index])(pointer(self), *vals)
-
-jvm = None
 
 class JavaVM(Structure):
     _fields_ = [("functions", POINTER(c_void_p))]
     
     def GetEnv(self):
         env_ptr = POINTER(JNIEnv)()
-        self.__getFunc(6, POINTER(POINTER(JNIEnv)), jint)(byref(env_ptr), self.version)
+        if self.__getFunc(6, POINTER(POINTER(JNIEnv)), jint)(byref(env_ptr), self.version) != JNI_OK:
+            return None
         return env_ptr.contents
     
     @staticmethod
-    def Create(jvm_lib_path, classpath = "", version = JNI_VERSION_1_6):
-        global jvm
-        if jvm == None:
-            libjvm = dll_loader.LoadLibrary(jvm_lib_path)
+    def Create(jvm_lib_path, classpath = [], additional_options = [], version = JNI_VERSION_1_6):
+        processpath = lambda path: os.path.normpath(os.path.expandvars(os.path.expanduser(path)))
+        
+        libjvm = dll_loader.LoadLibrary(processpath(jvm_lib_path))
 
-            jvm_ptr = POINTER(JavaVM)()
-            env_ptr = POINTER(JNIEnv)()
+        jvm_ptr = POINTER(JavaVM)()
+        env_ptr = POINTER(JNIEnv)()
 
-            args = JavaVMInitArgs(version, 1, pointer(JavaVMOption(classpath)), JNI_FALSE)
-            libjvm.JNI_CreateJavaVM(byref(jvm_ptr), byref(env_ptr), byref(args))
-            jvm = jvm_ptr.contents
-            jvm.__setVersion(version)
+        option_count = len(additional_options)
+        if len(classpath) != 0:
+            option_count = option_count + 1
+
+        vm_options = (JavaVMOption * option_count)()
+        for i in range(len(additional_options)):
+            vm_options[i] = JavaVMOption(additional_options[i])
+
+        if len(classpath) != 0:
+            full_classpath = string.join(chain(*map(glob, map(processpath, classpath))), path_separator)
+            vm_options[option_count-1] = JavaVMOption('-Djava.class.path=%s' % full_classpath)
+
+        args = JavaVMInitArgs(version, option_count, vm_options, JNI_FALSE)
+        if libjvm.JNI_CreateJavaVM(byref(jvm_ptr), byref(env_ptr), byref(args)) != JNI_OK:
+            raise JNIError, "Could not create java virtual machine"
+        
+        jvm = jvm_ptr.contents
+        jvm.__setVersion(version)
 
         return jvm
 
@@ -139,25 +199,3 @@ class JavaVM(Structure):
 
     def __getFunc(self, index, *types):
         return lambda *vals: JNIFUNCTYPE(jint, POINTER(JavaVM), *types)(self.functions[index])(pointer(self), *vals)
-
-def CallJavaMethod(self, clazz, method, transfer_register):
-    pass
-
-def VimEval(env, this, param):
-    return param * param
-
-JavaVM.Create('C:/Program Files (x86)/Java/jre6/bin/client/jvm.dll', "-Djava.class.path=C:/Users/Bruno/Downloads/clojure_1.0.0/clojure.jar;C:/git/VimJavaInterface/VimJavaInterface/build/classes")
-print "Version " + str(jvm.GetEnv().GetVersion())
-
-vimclass = jvm.GetEnv().FindClass("VimJavaInterface/Vim")
-vimevalfunc = JNIFUNCTYPE(c_int, POINTER(JNIEnv), jobject, c_int)(VimEval)
-jvm.GetEnv().RegisterNatives(vimclass, pointer(JNINativeMethod("Eval", "(I)I", cast(vimevalfunc, c_void_p))), 1)
-
-
-vimclientclass = jvm.GetEnv().FindClass("VimJavaScript/VimJavaScript")
-vimclientmethod = jvm.GetEnv().GetStaticMethodID(vimclientclass, "EvalNumber", "(I)I")
-vimclientargs = (jvalue * 1)()
-vimclientargs[0].i = 6
-
-print jvm.GetEnv().CallStaticIntMethodA(vimclientclass, vimclientmethod, vimclientargs)
-
