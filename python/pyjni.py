@@ -6,7 +6,7 @@ from ctypes import *
 
 #platform dependent calling convention definitions
 JNIFUNCTYPE = WINFUNCTYPE
-dll_loader  = windll
+lib_loader  = windll
 path_separator = ';'
 
 #platform dependent data type definitions
@@ -122,7 +122,7 @@ class JNIEnv(Structure):
 
     def CallStaticObjectMethodA(self, clazz, method_id, args):
         return self.__getFunc(116, jobject, jclass, jmethodID, c_void_p)(clazz, method_id, args)
-                                
+
     def PushLocalFrame(self, capacity):
         return self.__getFunc(19, jint, jint)(capacity)
 
@@ -136,14 +136,14 @@ class JNIEnv(Structure):
 
     def GetStringUTFChars(self, str, is_copy):
         return self.__getFunc(169, c_char_p, jstring, POINTER(jboolean))(str, is_copy)
-        
+
     def ReleaseStringUTFChars(self, str, utf):
         return self.__getFunc(170, None, jstring, c_char_p)(str, utf)
 
     def GetPythonString(self, jvmstring):
         if jvmstring == None:
             return None
-        
+
         chars = self.GetStringUTFChars(jvmstring, None)
         try:
             result = str(chars)
@@ -157,18 +157,18 @@ class JNIEnv(Structure):
 
 class JavaVM(Structure):
     _fields_ = [("functions", POINTER(c_void_p))]
-    
+
     def GetEnv(self):
         env_ptr = POINTER(JNIEnv)()
         if self.__getFunc(6, POINTER(POINTER(JNIEnv)), jint)(byref(env_ptr), self.version) != JNI_OK:
             return None
         return env_ptr.contents
-    
+
     @staticmethod
     def Create(jvm_lib_path, classpath = [], additional_options = [], version = JNI_VERSION_1_6):
         processpath = lambda path: os.path.normpath(os.path.expandvars(os.path.expanduser(path)))
-        
-        libjvm = dll_loader.LoadLibrary(processpath(jvm_lib_path))
+
+        libjvm = lib_loader.LoadLibrary(processpath(jvm_lib_path))
 
         jvm_ptr = POINTER(JavaVM)()
         env_ptr = POINTER(JNIEnv)()
@@ -188,7 +188,7 @@ class JavaVM(Structure):
         args = JavaVMInitArgs(version, option_count, vm_options, JNI_FALSE)
         if libjvm.JNI_CreateJavaVM(byref(jvm_ptr), byref(env_ptr), byref(args)) != JNI_OK:
             raise JNIError, "Could not create java virtual machine"
-        
+
         jvm = jvm_ptr.contents
         jvm.__setVersion(version)
 

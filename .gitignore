@@ -1,3 +1,4 @@
 /build
 /dist
 /python/*.pyc
+/python/test.py
