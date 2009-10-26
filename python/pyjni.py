@@ -105,14 +105,20 @@ class JNIEnv(Structure):
     def FindClass(self, name):
         return self.__getFunc(6, jclass, c_char_p)(name)
 
+    def ThrowNew(self, clazz, message):
+        return self.__getFunc(14, jint, jclass, c_char_p)(clazz, message)
+
+    def ExceptionOccurred(self):
+        return self.__getFunc(15, jthrowable)()
+
     def ExceptionDescribe(self):
         self.__getFunc(16, None)()
 
-    def ExceptionCheck(self):
-        return self.__getFunc(228, jboolean)()
-
     def ExceptionClear(self):
         return self.__getFunc(17, None)()
+    
+    def ExceptionCheck(self):
+        return self.__getFunc(228, jboolean)()
 
     def GetStaticMethodID(self, clazz, name, sig):
         return self.__getFunc(113, jmethodID, jclass, c_char_p, c_char_p)(clazz, name, sig)

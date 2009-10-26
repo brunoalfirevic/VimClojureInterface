@@ -9,7 +9,7 @@ public class Dispatcher {
     public static String dispatch(String target, String dispatcher, String args)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        Collection parameters = VimSerializer.deserializeFromVimScript(args);
+        Collection parameters = (Collection)VimSerializer.deserializeFromVimScript(args);
 
         Object result = dispatcher == null
                 ? dispatchByClassAndMethodName(target, parameters)
