@@ -84,17 +84,19 @@ def call_java(target, dispatcher, serialized_parameters):
 
         if exception:
             env.ExceptionClear()
+            
             exception_describer_class = env.FindClass("vimjavainterface/ExceptionDescriber")
             describe_method = env.GetStaticMethodID(exception_describer_class, "describe", "(Ljava/lang/Throwable;)Ljava/lang/String;")
+
             describe_arg_array = (jvalue * 1)()
             describe_arg_array[0].l = exception
-            jvm_exception_description = env.CallStaticObjectMethodA(exception_describer_class, describe_method, describe_arg_array)
-            py_exception_description = env.GetPythonString(jvm_exception_description)
 
+            jvm_exception_description = env.CallStaticObjectMethodA(exception_describer_class, describe_method, describe_arg_array)
             if env.ExceptionCheck():
                 env.ExceptionClear()
                 raise JavaInvocationError("Exception occurred during execution of java code, but more information could not be obtained")
 
+            py_exception_description = env.GetPythonString(jvm_exception_description)
             raise JavaInvocationError(py_exception_description)
         return env.GetPythonString(jvm_result)
     finally:
