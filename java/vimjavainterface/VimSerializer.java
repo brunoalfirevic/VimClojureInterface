@@ -1,6 +1,7 @@
 package vimjavainterface;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
@@ -66,8 +67,9 @@ class VimSerializer {
             default: {
                 int numberStart = position.currentPosition();
                 position.skipUntilEndOfNumber();
-                String numberStr = value.substring(numberStart, position.currentPosition());
-
+                String numberStr = value.substring(numberStart, position.currentPosition() + 1);
+                position.skipOne();
+                
                 if (numberStr.contains("."))
                     return Float.parseFloat(numberStr);
 
@@ -124,41 +126,37 @@ class VimSerializer {
         private String value;
         private int position;
 
-        public ParsingPosition(String value)
-        {
+        public ParsingPosition(String value) {
             this.value = value;
         }
 
-        public void skipOne()
-        {
+        public void skipOne() {
             position++;
         }
 
-        public char current()
-        {
+        public char current() {
             return value.charAt(position);
         }
 
-        public int currentPosition()
-        {
+        public int currentPosition() {
             return position;
         }
 
-        public void skip(char... characters)
-        {
-            while (position < value.length() && Character.isWhitespace(value.charAt(position)))
-                position++;
+        public void skip(Character... characters) {
+            while (position < value.length() && (Character.isWhitespace(current())
+                    || Arrays.asList(characters).contains(current())))
+                skipOne();
         }
 
-        public void skipUntilEndOfNumber()
-        {
-            while (position < value.length() && (Character.isDigit(value.charAt(position)) || value.charAt(position) == '.'))
+        public void skipUntilEndOfNumber() {
+            while (position + 1 < value.length() && (Character.isDigit(value.charAt(position + 1))
+                    || value.charAt(position + 1) == '.'))
                 position++;
         }
 
         private void skipUntilEndOfString() {
             while(true) {
-                if (value.charAt(position) == '\'') {
+                if (current() == '\'') {
                   if (position != value.length() - 1 && value.charAt(position + 1) == '\'')
                       position += 2;
                   else

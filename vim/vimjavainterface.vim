@@ -1,5 +1,8 @@
 py create_jvm()
 
+function! vimJavaInterface#ForceInit()
+endfunction
+
 function! vimJavaInterface#CallJavaMethod(class, method, ...)
     execute "py delegate_vim_function_to_java('" . a:class . "/" . a:method . "', None)"
 endfunction

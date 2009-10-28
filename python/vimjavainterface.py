@@ -104,4 +104,4 @@ def call_java(target, dispatcher, serialized_parameters):
 
 def delegate_vim_function_to_java(target, dispatcher):
     result = call_java(target, dispatcher, eval_and_serialize_vim_expression("a:000"))
-    vim.command("return eval(%s)" % result)
+    vim.command("return eval('%s')" % result.replace("'", "''"))
