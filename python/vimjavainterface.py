@@ -1,6 +1,7 @@
 try:
     import vim
-    vim.command(":let g:null=[]")
+    import vimpyenhanced
+    vim.command(":function! IsNull(val) \n return a:val is function('IsNull') \n endfunction")
 except:
     pass
 
@@ -8,32 +9,35 @@ from pyjni import *
 import sys
 import threading #we need to call this inside VIM because process can crash if this is first imported after creating JVM.. wierd
 
-def eval_and_serialize_vim_expression(expr):
-    return vim.eval('string(%s)' % expr)
-
-def throw_java_exception(env, exc):
-    env.contents.ThrowNew(env.contents.FindClass("vimjavainterface/VimException"), str(exc))
+def execute_vim_action(env, expr, action):
+    try:
+        py_expr = env.contents.GetPythonString(expr)
+        return action(py_expr)
+    except:
+        env.contents.ThrowNew(env.contents.FindClass("vimjavainterface/VimException"), str(sys.exc_info()[1]))
 
 #implementation of native methods for java Vim class
 def vim_eval(env, this, expr):
-    try:
-        py_expr = env.contents.GetPythonString(expr)
-        return env.contents.NewStringUTF(eval_and_serialize_vim_expression(py_expr))
-    except:
-        throw_java_exception(env, sys.exc_info()[1])
+    return execute_vim_action(env, expr, vim.eval_as_string)
 
 def vim_command(env, this, cmd):
-    try:
-        py_cmd = env.contents.GetPythonString(cmd)
-        vim.command(py_cmd)
-    except:
-        throw_java_exception(env, sys.exc_info()[1])
+    execute_vim_action(env, cmd, vim.command)
+
+def vim_safe_command(env, this, cmd):
+    execute_vim_action(env, cmd, vim.safe.command)
+
+def vim_safe_eval(env, this, expr):
+    return execute_vim_action(env, expr, vim.safe.eval_as_string)
 
 #end implementation of native methods for java Vim class
 
 jvm = None
 
 def create_jvm(jvmlib = None, classpath = None, additional_options = None):
+    global jvm
+    if jvm != None:
+        raise JNIError("JVM already created")
+    
     if jvmlib == None:
         jvmlib = vim.eval('g:jvm_lib')
     if classpath == None:
@@ -49,6 +53,8 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
 
     vimevalfunc = JNIFUNCTYPE(jstring, POINTER(JNIEnv), jobject, jstring)(vim_eval)
     vimcommandfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_command)
+    vimsafeevalfunc = JNIFUNCTYPE(jstring, POINTER(JNIEnv), jobject, jstring)(vim_safe_eval)
+    vimsafecommandfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_safe_command)
 
     vm.GetEnv().RegisterNatives(vimclass,
                                 pointer(JNINativeMethod("nativeEval", "(Ljava/lang/String;)Ljava/lang/String;",
@@ -57,7 +63,14 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     vm.GetEnv().RegisterNatives(vimclass,
                                 pointer(JNINativeMethod("nativeCommand", "(Ljava/lang/String;)V",
                                                         cast(vimcommandfunc, c_void_p))), 1)
-    global jvm
+
+    vm.GetEnv().RegisterNatives(vimclass,
+                                pointer(JNINativeMethod("nativeSafeEval", "(Ljava/lang/String;)Ljava/lang/String;",
+                                                        cast(vimsafeevalfunc, c_void_p))), 1)
+    
+    vm.GetEnv().RegisterNatives(vimclass,
+                                pointer(JNINativeMethod("nativeSafeCommand", "(Ljava/lang/String;)V",
+                                                        cast(vimsafecommandfunc, c_void_p))), 1)
     jvm = vm
     return vm
 
@@ -103,5 +116,5 @@ def call_java(target, dispatcher, serialized_parameters):
         env.PopLocalFrame(None)
 
 def delegate_vim_function_to_java(target, dispatcher):
-    result = call_java(target, dispatcher, eval_and_serialize_vim_expression("a:000"))
+    result = call_java(target, dispatcher, vim.eval_as_string("a:000"))
     vim.command("return eval('%s')" % result.replace("'", "''"))

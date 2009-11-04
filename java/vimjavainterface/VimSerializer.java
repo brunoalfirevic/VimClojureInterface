@@ -7,6 +7,8 @@ import java.util.Hashtable;
 import java.util.Map;
 
 class VimSerializer {
+    private static final String NULL_TOKEN = "function('IsNull')";
+
     public static Object deserializeFromVimScript(String value) {
         return deserializeFromVimScript(value, new ParsingPosition(value));
     }
@@ -63,6 +65,12 @@ class VimSerializer {
                 position.skipOne();
                 return result;
             }
+
+            case 'f': { //function('IsNull')
+                assert value.substring(position.currentPosition(), position.currentPosition() + NULL_TOKEN.length()).equals(NULL_TOKEN);
+                position.skipCount(NULL_TOKEN.length());
+                return null;
+            }
             
             default: {
                 int numberStart = position.currentPosition();
@@ -80,7 +88,7 @@ class VimSerializer {
 
     private static void serializeForVimScript(StringBuilder sb, Object value) {
         if (value == null) {
-            sb.append("g:null");
+            sb.append(NULL_TOKEN);
         } else if (value instanceof Number) {
             sb.append(value.toString());
         } else if (value instanceof String) {
@@ -132,6 +140,10 @@ class VimSerializer {
 
         public void skipOne() {
             position++;
+        }
+
+        public void skipCount(int charCount) {
+            position += charCount;
         }
 
         public char current() {
