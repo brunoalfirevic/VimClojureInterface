@@ -1,8 +1,6 @@
-import threading
 import vim
+import threading
 import subprocess
-import time
-import re
 
 class SafeVim():
     main_vim_thread = threading.currentThread()

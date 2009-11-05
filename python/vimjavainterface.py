@@ -1,13 +1,13 @@
+from pyjni import *
+import sys
+import threading #we need to call this inside VIM because process can crash if this is first imported after creating JVM.. wierd
+
 try:
     import vim
     import vimpyenhanced
     vim.command(":function! IsNull(val) \n return a:val is function('IsNull') \n endfunction")
 except:
-    pass
-
-from pyjni import *
-import sys
-import threading #we need to call this inside VIM because process can crash if this is first imported after creating JVM.. wierd
+    print sys.exc_info()[1]
 
 def execute_vim_action(env, expr, action):
     try:
@@ -23,11 +23,11 @@ def vim_eval(env, this, expr):
 def vim_command(env, this, cmd):
     execute_vim_action(env, cmd, vim.command)
 
-def vim_safe_command(env, this, cmd):
-    execute_vim_action(env, cmd, vim.safe.command)
-
 def vim_safe_eval(env, this, expr):
     return execute_vim_action(env, expr, vim.safe.eval_as_string)
+
+def vim_safe_command(env, this, cmd):
+    execute_vim_action(env, cmd, vim.safe.command)
 
 #end implementation of native methods for java Vim class
 

@@ -129,8 +129,7 @@ class VimSerializer {
         }
     }
 
-    static class ParsingPosition
-    {
+    static class ParsingPosition {
         private String value;
         private int position;
 
@@ -139,7 +138,7 @@ class VimSerializer {
         }
 
         public void skipOne() {
-            position++;
+            skipCount(1);
         }
 
         public void skipCount(int charCount) {
