@@ -1,6 +1,5 @@
 from pyjni import *
 import sys
-import threading #we need to call this inside VIM because process can crash if this is first imported after creating JVM.. wierd
 
 try:
     import vim
@@ -32,9 +31,12 @@ def vim_safe_command(env, this, cmd):
 #end implementation of native methods for java Vim class
 
 jvm = None
+jvm_native_callbacks = None
 
 def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     global jvm
+    global jvm_native_callbacks
+    
     if jvm != None:
         raise JNIError("JVM already created")
     
@@ -72,6 +74,7 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
                                 pointer(JNINativeMethod("nativeSafeCommand", "(Ljava/lang/String;)V",
                                                         cast(vimsafecommandfunc, c_void_p))), 1)
     jvm = vm
+    jvm_native_callbacks = [vimevalfunc, vimcommandfunc, vimsafeevalfunc, vimsafecommandfunc] #to prevent garbage collection
     return vm
 
 def call_java(target, dispatcher, serialized_parameters):
