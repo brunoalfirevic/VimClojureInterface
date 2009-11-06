@@ -1,9 +1,8 @@
-from pyjni import *
 import sys
+from pyjni import *
 
 try:
-    import vim
-    import vimpyenhanced
+    import vim, vimpyenhanced
     vim.command(":function! IsNull(val) \n return a:val is function('IsNull') \n endfunction")
 except:
     print sys.exc_info()[1]

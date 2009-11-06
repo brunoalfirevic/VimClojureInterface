@@ -1,6 +1,4 @@
-import vim
-import threading
-import subprocess
+import vim, threading, subprocess
 
 class SafeVim():
     main_vim_thread = threading.currentThread()
