@@ -10,7 +10,7 @@ except:
 def execute_vim_action(env, expr, action):
     try:
         py_expr = env.contents.GetPythonString(expr)
-        return action(py_expr)
+        return env.contents.NewStringUTF(action(py_expr))
     except:
         env.contents.ThrowNew(env.contents.FindClass("vimjavainterface/VimException"), str(sys.exc_info()[1]))
 
