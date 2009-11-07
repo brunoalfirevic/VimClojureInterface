@@ -91,8 +91,6 @@ class VimSerializer {
             sb.append(NULL_TOKEN);
         } else if (value instanceof Number) {
             sb.append(value.toString());
-        } else if (value instanceof String) {
-            sb.append("'" + ((String)value).replace("'", "''") + "'");
         } else if (value instanceof Collection) {
             Collection collection = (Collection)value;
             sb.append('[');
@@ -112,11 +110,8 @@ class VimSerializer {
                 if (!isFirst)
                     sb.append(',');
 
-                if (!(key instanceof Integer
-                        || key instanceof Long
-                        || key instanceof Byte
-                        || key instanceof String))
-                    throw new IllegalArgumentException("Only whole numbers and strings can be keys in dictionary");
+                if (key == null || key instanceof Collection || key instanceof Map)
+                    throw new IllegalArgumentException("Keys in dictionary cannot be collections, maps or null values");
 
                 serializeForVimScript(sb, key);
                 sb.append(':');
@@ -125,7 +120,7 @@ class VimSerializer {
             }
             sb.append('}');
         } else {
-            throw new IllegalArgumentException("Type not supported in Vim Script");
+            sb.append("'" + (value.toString()).replace("'", "''") + "'");
         }
     }
 

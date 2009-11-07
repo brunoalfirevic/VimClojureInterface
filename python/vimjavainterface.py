@@ -35,10 +35,10 @@ jvm_native_callbacks = None
 def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     global jvm
     global jvm_native_callbacks
-    
+
     if jvm != None:
         raise JNIError("JVM already created")
-    
+
     if jvmlib == None:
         jvmlib = vim.eval('g:jvm_lib')
     if classpath == None:
@@ -58,20 +58,20 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     vimsafecommandfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_safe_command)
 
     vm.GetEnv().RegisterNatives(vimclass,
-                                pointer(JNINativeMethod("nativeEval", "(Ljava/lang/String;)Ljava/lang/String;",
-                                                        cast(vimevalfunc, c_void_p))), 1)
+                                pointer(JNINativeMethod("nativeEval", "(Ljava/lang/String;)Ljava/lang/String;", cast(vimevalfunc, c_void_p))),
+                                1)
 
     vm.GetEnv().RegisterNatives(vimclass,
-                                pointer(JNINativeMethod("nativeCommand", "(Ljava/lang/String;)V",
-                                                        cast(vimcommandfunc, c_void_p))), 1)
+                                pointer(JNINativeMethod("nativeCommand", "(Ljava/lang/String;)V", cast(vimcommandfunc, c_void_p))),
+                                1)
 
     vm.GetEnv().RegisterNatives(vimclass,
-                                pointer(JNINativeMethod("nativeSafeEval", "(Ljava/lang/String;)Ljava/lang/String;",
-                                                        cast(vimsafeevalfunc, c_void_p))), 1)
-    
+                                pointer(JNINativeMethod("nativeSafeEval", "(Ljava/lang/String;)Ljava/lang/String;", cast(vimsafeevalfunc, c_void_p))),
+                                1)
+
     vm.GetEnv().RegisterNatives(vimclass,
-                                pointer(JNINativeMethod("nativeSafeCommand", "(Ljava/lang/String;)V",
-                                                        cast(vimsafecommandfunc, c_void_p))), 1)
+                                pointer(JNINativeMethod("nativeSafeCommand", "(Ljava/lang/String;)V", cast(vimsafecommandfunc, c_void_p))),
+                                1)
     jvm = vm
     jvm_native_callbacks = [vimevalfunc, vimcommandfunc, vimsafeevalfunc, vimsafecommandfunc] #to prevent garbage collection
     return vm
@@ -92,14 +92,14 @@ def call_java(target, dispatcher, serialized_parameters):
         arg_array[0].l = jvm_target
         arg_array[1].l = jvm_dispatcher
         arg_array[2].l = jvm_serialized_parameters
-        
+
         #here we go into java
         jvm_result = env.CallStaticObjectMethodA(dispatchclass, dispatchmethod, arg_array)
         exception = env.ExceptionOccurred()
 
         if exception:
             env.ExceptionClear()
-            
+
             exception_describer_class = env.FindClass("vimjavainterface/ExceptionDescriber")
             describe_method = env.GetStaticMethodID(exception_describer_class, "describe", "(Ljava/lang/Throwable;)Ljava/lang/String;")
 
