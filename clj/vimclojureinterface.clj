@@ -5,7 +5,9 @@
      :name vimclojureinterface.Dispatcher
      :methods [#^{:static true} [dispatch [String java.util.Collection] Object]]))
 
-(def repl-state (atom {:ns (create-ns 'user)}))
+(def #^{:private true}
+  repl-state
+  (atom {:ns (create-ns 'user)}))
 
 (defn- perform-dispatch [target args]
   (apply @(resolve (symbol target))
@@ -17,13 +19,19 @@
               args)))
 
 (defn- -dispatch [target args]
-  (binding [*ns*  (:ns @repl-state)]
+  (binding [*ns* (:ns @repl-state)]
     (let [result (perform-dispatch target args)]
       (reset! repl-state {:ns *ns*})
       result)))
 
-(defn eval-string [expr-str]
-  (eval (read-string expr-str)))
+(defn- eval-string [expr-str]
+  (let [eof (Object.)]
+    (with-in-str expr-str
+      (loop [result nil]
+        (let [input (read *in* false eof)]
+          (if (not= input eof)
+            (recur (eval input))
+            result))))))
 
 (defn vim-eval [expr]
   (Vim/eval expr))

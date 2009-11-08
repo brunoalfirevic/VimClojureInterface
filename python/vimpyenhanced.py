@@ -3,7 +3,7 @@ import vim, threading, subprocess
 class SafeVim():
     main_vim_thread = threading.currentThread()
     vim_server_name = vim.eval("v:servername")
-    
+
     def eval_as_string(self, expr):
         if threading.currentThread() == self.main_vim_thread:
             return vim.eval("remote_expr(v:servername, 'string(%s)')" % self.__argescape(expr))
@@ -17,7 +17,7 @@ class SafeVim():
             self.__shell_vim_remote_expr("ExecuteForSafeVim('%s')" % self.__argescape(cmd))
 
     def __shell_vim_remote_expr(self, expr):
-        process = subprocess.Popen(['vim', '--servername', self.vim_server_name, '--remote-expr', expr], 
+        process = subprocess.Popen(['vim', '--servername', self.vim_server_name, '--remote-expr', expr],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output = process.communicate()
         return output[0].strip()

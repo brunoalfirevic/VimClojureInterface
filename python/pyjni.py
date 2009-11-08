@@ -11,12 +11,12 @@ path_separator = ';'
 
 #platform dependent data type definitions
 jint  = c_long
-jlong = c_int64 
+jlong = c_int64
 jbyte = c_byte          #signed char
 
 #data type definitions
 jboolean  = c_ubyte     #unsigned char
-jchar     = c_ushort 
+jchar     = c_ushort
 jshort    = c_short
 jfloat    = c_float
 jdouble   = c_double
@@ -64,7 +64,7 @@ JNILocalRefType      = jobjectRefType(1)
 JNIGlobalRefType     = jobjectRefType(2)
 JNIWeakGlobalRefType = jobjectRefType(3)
 
-#possible return values for JNI functions.
+#possible return values for JNI functions
 JNI_OK        =    0              #success
 JNI_ERR       =   -1              #unknown error
 JNI_EDETACHED =   -2              #thread detached from the VM
@@ -98,7 +98,7 @@ class JNINativeMethod(Structure):
 
 class JNIEnv(Structure):
     _fields_ = [("functions", POINTER(c_void_p))]
-    
+
     def GetVersion(self):
         return self.__getFunc(4, jint)()
 
@@ -116,7 +116,7 @@ class JNIEnv(Structure):
 
     def ExceptionClear(self):
         return self.__getFunc(17, None)()
-    
+
     def ExceptionCheck(self):
         return self.__getFunc(228, jboolean)()
 
