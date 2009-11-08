@@ -105,7 +105,7 @@
       <fileset dir="${python.source.dir}" includes="*.py"/>
     </copy>
 	<copy todir="${dist.dir}">
-      <fileset dir="${vim.source.dir}" includes="**/*.vim"/>
+      <fileset dir="${vim.source.dir}" />
     </copy>
   </target>
 </project>

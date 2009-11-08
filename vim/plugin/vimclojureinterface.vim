@@ -1,1 +1,1 @@
-call vimclojureinterface#ForceInit()
+call vimclojureinterface#ForceInit()
