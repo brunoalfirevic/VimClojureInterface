@@ -77,7 +77,7 @@
   <property name="vim.source.dir" location="vim"/>
   <property name="clojure.deps.dir" location="lib"/>
   <property name="dist.dir" value="dist"/>
-  <property name="clojureviminterface.jar" value="${dist.dir}/plugin/vimclojureinterface.jar"/>
+  <property name="vimclojureinterface.jar" value="${dist.dir}/plugin/vimclojureinterface.jar"/>
   
   <path id="clojure.classpath">
     <path location="${clojure.build.dir}"/>
@@ -96,7 +96,7 @@
   </target>	
   
   <target name="-post-jar">
-    <jar jarfile="${clojureviminterface.jar}">
+    <jar jarfile="${vimclojureinterface.jar}">
       <fileset dir="${clojure.source.dir}" includes="**/*.clj"/>
 	  <fileset dir="${clojure.build.dir}" includes="vimclojureinterface/**/*.class"/>
       <fileset dir="${clojure.build.dir}" includes="vimclojureinterface*.class"/>
