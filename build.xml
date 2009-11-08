@@ -7,8 +7,8 @@
 <!-- the Compile on Save feature is turned off for the project. -->
 <!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
 <!-- in the project's Project Properties dialog box.-->
-<project name="VimJavaInterface" default="default" basedir=".">
-    <description>Builds, tests, and runs the project VimJavaInterface.</description>
+<project name="VimClojureInterface" default="default" basedir=".">
+    <description>Builds, tests, and runs the project VimClojureInterface.</description>
     <import file="nbproject/build-impl.xml"/>
     <!--
 
@@ -101,7 +101,7 @@
 	  <fileset dir="${clojure.build.dir}" includes="vimclojureinterface/**/*.class"/>
       <fileset dir="${clojure.build.dir}" includes="vimclojureinterface*.class"/>
     </jar>
-	<copy todir="${dist.dir}/plugin">
+	<copy todir="${dist.dir}/autoload">
       <fileset dir="${python.source.dir}" includes="*.py"/>
     </copy>
 	<copy todir="${dist.dir}">

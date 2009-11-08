@@ -1,6 +1,6 @@
 import sys
 from pyjni import *
-
+    
 try:
     import vim, vimpyenhanced
     vim.command(":function! IsNull(val) \n return a:val is function('IsNull') \n endfunction")
@@ -49,6 +49,11 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
         else:
             additional_options = []
 
+    for runtimedir in vim.eval("&runtimepath").split(","):
+        plugindir = os.path.join(runtimedir, "plugin")
+        classpath.append(plugindir)
+        classpath.append(os.path.join(plugindir, "*.jar"))
+    
     vm = JavaVM.Create(jvmlib, classpath, additional_options)
     vimclass = vm.GetEnv().FindClass("vimjavainterface/Vim")
 
