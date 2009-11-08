@@ -71,4 +71,41 @@
     nbproject/build-impl.xml file. 
 
     -->
+  <property name="clojure.build.dir" value="build/classes"/>
+  <property name="clojure.source.dir" location="clj"/>
+  <property name="python.source.dir" location="python"/>
+  <property name="vim.source.dir" location="vim"/>
+  <property name="clojure.deps.dir" location="lib"/>
+  <property name="dist.dir" value="dist"/>
+  <property name="clojureviminterface.jar" value="${dist.dir}/plugin/vimclojureinterface.jar"/>
+  
+  <path id="clojure.classpath">
+    <path location="${clojure.build.dir}"/>
+    <path location="${clojure.source.dir}"/>
+    <fileset dir="${clojure.deps.dir}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+  
+  <target name="-post-compile">
+    <java classname="clojure.lang.Compile" fork="true">
+      <sysproperty key="clojure.compile.path" value="${clojure.build.dir}"/>
+      <classpath refid="clojure.classpath"/>
+      <arg value="vimclojureinterface"/>
+    </java>
+  </target>	
+  
+  <target name="-post-jar">
+    <jar jarfile="${clojureviminterface.jar}">
+      <fileset dir="${clojure.source.dir}" includes="**/*.clj"/>
+	  <fileset dir="${clojure.build.dir}" includes="vimclojureinterface/**/*.class"/>
+      <fileset dir="${clojure.build.dir}" includes="vimclojureinterface*.class"/>
+    </jar>
+	<copy todir="${dist.dir}/plugin">
+      <fileset dir="${python.source.dir}" includes="*.py"/>
+    </copy>
+	<copy todir="${dist.dir}">
+      <fileset dir="${vim.source.dir}" includes="**/*.vim"/>
+    </copy>
+  </target>
 </project>
