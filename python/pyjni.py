@@ -7,7 +7,6 @@ from ctypes import *
 #platform dependent calling convention definitions
 JNIFUNCTYPE = WINFUNCTYPE
 lib_loader  = windll
-path_separator = ';'
 
 #platform dependent data type definitions
 jint  = c_long
@@ -98,6 +97,7 @@ class JNINativeMethod(Structure):
 
 class JNIEnv(Structure):
     _fields_ = [("functions", POINTER(c_void_p))]
+    native_callbacks = []
 
     def GetVersion(self):
         return self.__getFunc(4, jint)()
@@ -125,6 +125,10 @@ class JNIEnv(Structure):
 
     def RegisterNatives(self, clazz, methods, n_methods):
         return self.__getFunc(215, jint, jclass, POINTER(JNINativeMethod), jint)(clazz, methods, n_methods)
+
+    def RegisterNative(self, clazz, method_name, method_signature, func_ptr):
+        self.native_callbacks.append(func_ptr) #to prevent garbage collection
+        return self.RegisterNatives(clazz, pointer(JNINativeMethod(method_name, method_signature, cast(func_ptr, c_void_p))),  1)
 
     def CallStaticObjectMethodA(self, clazz, method_id, args):
         return self.__getFunc(116, jobject, jclass, jmethodID, c_void_p)(clazz, method_id, args)
@@ -188,7 +192,7 @@ class JavaVM(Structure):
             vm_options[i] = JavaVMOption(additional_options[i])
 
         if len(classpath) != 0:
-            full_classpath = string.join(chain(*map(glob, map(processpath, classpath))), path_separator)
+            full_classpath = string.join(chain(*map(glob, map(processpath, classpath))), os.pathsep)
             vm_options[option_count-1] = JavaVMOption('-Djava.class.path=%s' % full_classpath)
 
         args = JavaVMInitArgs(version, option_count, vm_options, JNI_FALSE)
