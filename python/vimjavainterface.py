@@ -69,18 +69,18 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     jvm = vm
     return vm
 
-def call_java(target, dispatcher, serialized_parameters):
+def call_java(targetclass, targetmethod, serialized_parameters):
     env = jvm.GetEnv()
     env.PushLocalFrame(15)
 
     try:
-        jvm_target = env.NewStringUTF(target)
-        jvm_dispatcher = env.NewStringUTF(dispatcher)
+        jvm_target_class = env.NewStringUTF(targetclass)
+        jvm_target_method = env.NewStringUTF(targetmethod)
         jvm_serialized_parameters = env.NewStringUTF(serialized_parameters)
 
         arg_array = (jvalue * 3)()
-        arg_array[0].l = jvm_target
-        arg_array[1].l = jvm_dispatcher
+        arg_array[0].l = jvm_target_class
+        arg_array[1].l = jvm_target_method
         arg_array[2].l = jvm_serialized_parameters
 
         #here we go into java
@@ -104,7 +104,7 @@ def call_java(target, dispatcher, serialized_parameters):
     finally:
         env.PopLocalFrame(None)
 
-def delegate_vim_function_to_java(target, dispatcher, arg_parameter_name):
-    result = call_java(target, dispatcher, vim.eval_as_string(arg_parameter_name))
+def delegate_vim_function_to_java(targetclass, targetmethod, arg_parameter_name):
+    result = call_java(targetclass, targetmethod, vim.eval_as_string(arg_parameter_name))
     vim.command("return eval('%s')" % result.replace("'", "''"))
 

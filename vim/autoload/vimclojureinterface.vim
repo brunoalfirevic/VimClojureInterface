@@ -2,7 +2,7 @@ function! vimclojureinterface#ForceInit()
 endfunction
 
 function! vimclojureinterface#CallClojure(function, ...)
-    return vimjavainterface#CallJava(a:function, 'vimclojureinterface.Dispatcher/dispatch', a:000)
+    return vimjavainterface#CallJavaMethod('vimclojureinterface.Dispatcher', 'dispatch', a:function, a:000)
 endfunction
 
 function! CljEval(expr)
