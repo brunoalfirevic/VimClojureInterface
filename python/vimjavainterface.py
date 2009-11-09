@@ -122,6 +122,6 @@ def call_java(target, dispatcher, serialized_parameters):
     finally:
         env.PopLocalFrame(None)
 
-def delegate_vim_function_to_java(target, dispatcher):
-    result = call_java(target, dispatcher, vim.eval_as_string("a:000"))
+def delegate_vim_function_to_java(target, dispatcher, arg_parameter_name = 'a:000'):
+    result = call_java(target, dispatcher, vim.eval_as_string(arg_parameter_name))
     vim.command("return eval('%s')" % result.replace("'", "''"))

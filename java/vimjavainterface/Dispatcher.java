@@ -11,7 +11,7 @@ public class Dispatcher {
 
         Collection parameters = (Collection)VimSerializer.deserializeFromVimScript(args);
 
-        Object result = dispatcher == null
+        Object result = (dispatcher == null || dispatcher.isEmpty())
                 ? dispatchByClassAndMethodName(target, parameters)
                 : dispatchByClassAndMethodName(dispatcher, Arrays.asList(target, parameters));
 

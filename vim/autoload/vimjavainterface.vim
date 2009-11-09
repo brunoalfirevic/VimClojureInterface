@@ -14,10 +14,12 @@ EOF
 function! vimjavainterface#ForceInit()
 endfunction
 
-function! vimjavainterface#CallJavaMethod(class, method, ...)
-    execute "py vimjavainterface.delegate_vim_function_to_java('" . escape(a:class, "'") . "/" . escape(a:method, "'") . "', None)"
+function! vimjavainterface#CallJava(target, dispatcher, args)
+    execute "py vimjavainterface.delegate_vim_function_to_java('" . escape(a:target, "'") . "', '" . escape(a:dispatcher, "'") . "', 'a:args')"
 endfunction
 
-function! vimjavainterface#CallJava(target, dispatcher, ...)
-    execute "py vimjavainterface.delegate_vim_function_to_java('" . escape(a:target, "'") . "', '" . escape(a:dispatcher, "'") . "')"
+function! vimjavainterface#CallJavaMethod(class, method, ...)
+    return vimjavainterface#CallJava(a:target . "/" . a:method, '', a:000)
 endfunction
+
+

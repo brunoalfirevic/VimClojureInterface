@@ -9,8 +9,8 @@
   repl-state
   (atom {:ns (create-ns 'user)}))
 
-(defn- perform-dispatch [target args]
-  (apply @(resolve (symbol target))
+(defn- -dispatch [target args]
+  (apply @(find-var (symbol target))
          (map (fn [arg]
                 (cond
                   (instance? java.util.Map arg) (into {} arg)
@@ -18,20 +18,17 @@
                   :else arg))
               args)))
 
-(defn- -dispatch [target args]
-  (binding [*ns* (:ns @repl-state)]
-    (let [result (perform-dispatch target args)]
-      (reset! repl-state {:ns *ns*})
-      result)))
-
 (defn- eval-string [expr-str]
-  (let [eof (Object.)]
+  (binding [*ns* (:ns @repl-state)]
     (with-in-str expr-str
       (loop [result nil]
-        (let [input (read *in* false eof)]
+        (let [eof (Object.)
+              input (read *in* false eof)]
           (if (not= input eof)
             (recur (eval input))
-            result))))))
+            (do
+              (reset! repl-state {:ns *ns*})
+              result)))))))
 
 (defn vim-eval [expr]
   (Vim/eval expr))
