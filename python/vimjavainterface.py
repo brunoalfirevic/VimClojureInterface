@@ -35,16 +35,15 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
         jvmlib = vim.eval('g:jvm_lib')
     if classpath == None:
         classpath = vim.eval('g:jvm_classpath')
+        for runtimedir in vim.eval("&runtimepath").split(","):
+            plugindir = os.path.join(runtimedir, "plugin")
+            classpath.append(plugindir)
+            classpath.append(os.path.join(plugindir, "*.jar"))
     if additional_options == None:
         if int(vim.eval("exists('g:jvm_additional_options')")):
             additional_options = vim.eval('g:jvm_additional_options')
         else:
             additional_options = []
-
-    for runtimedir in vim.eval("&runtimepath").split(","):
-        plugindir = os.path.join(runtimedir, "plugin")
-        classpath.append(plugindir)
-        classpath.append(os.path.join(plugindir, "*.jar"))
 
     vm = JavaVM.Create(jvmlib, classpath, additional_options)
     env = vm.GetEnv()

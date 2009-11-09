@@ -148,7 +148,7 @@ class JNIEnv(Structure):
         return self.__getFunc(167, jstring, c_char_p)(chars)
 
     def GetStringUTFChars(self, str, is_copy):
-        return self.__getFunc(169, c_char_p, jstring, POINTER(jboolean))(str, is_copy)
+        return self.__getFunc(169, POINTER(c_char), jstring, POINTER(jboolean))(str, is_copy)
 
     def ReleaseStringUTFChars(self, str, utf):
         return self.__getFunc(170, None, jstring, c_char_p)(str, utf)
@@ -159,7 +159,7 @@ class JNIEnv(Structure):
 
         chars = self.GetStringUTFChars(jvmstring, None)
         try:
-            result = str(chars)
+            result = cast(chars, c_char_p).value
         finally:
             self.ReleaseStringUTFChars(jvmstring, chars)
 
