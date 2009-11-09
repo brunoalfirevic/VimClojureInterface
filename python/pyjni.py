@@ -97,7 +97,7 @@ class JNINativeMethod(Structure):
 
 class JNIEnv(Structure):
     _fields_ = [("functions", POINTER(c_void_p))]
-    native_callbacks = []
+    __native_callbacks = []
 
     def GetVersion(self):
         return self.__getFunc(4, jint)()
@@ -127,8 +127,11 @@ class JNIEnv(Structure):
         return self.__getFunc(215, jint, jclass, POINTER(JNINativeMethod), jint)(clazz, methods, n_methods)
 
     def RegisterNative(self, clazz, method_name, method_signature, func_ptr):
-        self.native_callbacks.append(func_ptr) #to prevent garbage collection
+        self.__native_callbacks.append(func_ptr) #to prevent garbage collection
         return self.RegisterNatives(clazz, pointer(JNINativeMethod(method_name, method_signature, cast(func_ptr, c_void_p))),  1)
+
+    def NewGlobalRef(self, obj):
+        return self.__getFunc(21, jobject, jobject)(obj)
 
     def CallStaticObjectMethodA(self, clazz, method_id, args):
         return self.__getFunc(116, jobject, jclass, jmethodID, c_void_p)(clazz, method_id, args)

@@ -3,12 +3,14 @@ from pyjni import *
 
 vim.command(":function! IsNull(val) \n return a:val is function('IsNull') \n endfunction")
 
+jvm = None
+
 def execute_vim_action(env, expr, action):
     try:
         py_expr = env.contents.GetPythonString(expr)
         return env.contents.NewStringUTF(action(py_expr))
     except:
-        env.contents.ThrowNew(env.contents.FindClass("vimjavainterface/VimException"), str(sys.exc_info()[1]))
+        env.contents.ThrowNew(jvm.vim_exception_class, str(sys.exc_info()[1]))
 
 #implementation of native methods for java Vim class
 def vim_eval(env, this, expr):
@@ -22,10 +24,7 @@ def vim_safe_eval(env, this, expr):
 
 def vim_safe_command(env, this, cmd):
     execute_vim_action(env, cmd, vim.safe.command)
-
 #end implementation of native methods for java Vim class
-
-jvm = None
 
 def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     global jvm
@@ -48,29 +47,33 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
         classpath.append(os.path.join(plugindir, "*.jar"))
 
     vm = JavaVM.Create(jvmlib, classpath, additional_options)
-    vimclass = vm.GetEnv().FindClass("vimjavainterface/Vim")
+    env = vm.GetEnv()
+    vimclass = env.FindClass("vimjavainterface/Vim")
 
     vimevalfunc = JNIFUNCTYPE(jstring, POINTER(JNIEnv), jobject, jstring)(vim_eval)
     vimcommandfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_command)
     vimsafeevalfunc = JNIFUNCTYPE(jstring, POINTER(JNIEnv), jobject, jstring)(vim_safe_eval)
     vimsafecommandfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_safe_command)
 
-    vm.GetEnv().RegisterNative(vimclass, "nativeEval", "(Ljava/lang/String;)Ljava/lang/String;", vimevalfunc)
-    vm.GetEnv().RegisterNative(vimclass, "nativeCommand", "(Ljava/lang/String;)V", vimcommandfunc)
-    vm.GetEnv().RegisterNative(vimclass, "nativeSafeEval", "(Ljava/lang/String;)Ljava/lang/String;", vimsafeevalfunc)
-    vm.GetEnv().RegisterNative(vimclass, "nativeSafeCommand", "(Ljava/lang/String;)V", vimsafecommandfunc)
+    env.RegisterNative(vimclass, "nativeEval", "(Ljava/lang/String;)Ljava/lang/String;", vimevalfunc)
+    env.RegisterNative(vimclass, "nativeCommand", "(Ljava/lang/String;)V", vimcommandfunc)
+    env.RegisterNative(vimclass, "nativeSafeEval", "(Ljava/lang/String;)Ljava/lang/String;", vimsafeevalfunc)
+    env.RegisterNative(vimclass, "nativeSafeCommand", "(Ljava/lang/String;)V", vimsafecommandfunc)
+
+    vm.dispatchclass = env.NewGlobalRef(env.FindClass("vimjavainterface/Dispatcher"))
+    vm.dispatchmethod = env.NewGlobalRef(env.GetStaticMethodID(vm.dispatchclass, "dispatch", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"))
+    vm.exception_describer_class = env.NewGlobalRef(env.FindClass("vimjavainterface/ExceptionDescriber"))
+    vm.exception_describe_method = env.NewGlobalRef(env.GetStaticMethodID(vm.exception_describer_class, "describe", "(Ljava/lang/Throwable;)Ljava/lang/String;"))
+    vm.vim_exception_class = env.NewGlobalRef(env.FindClass("vimjavainterface/VimException"))
 
     jvm = vm
     return vm
 
 def call_java(target, dispatcher, serialized_parameters):
     env = jvm.GetEnv()
-    env.PushLocalFrame(10)
+    env.PushLocalFrame(15)
 
     try:
-        dispatchclass = env.FindClass("vimjavainterface/Dispatcher")
-        dispatchmethod = env.GetStaticMethodID(dispatchclass, "dispatch", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;")
-
         jvm_target = env.NewStringUTF(target)
         jvm_dispatcher = env.NewStringUTF(dispatcher)
         jvm_serialized_parameters = env.NewStringUTF(serialized_parameters)
@@ -81,19 +84,16 @@ def call_java(target, dispatcher, serialized_parameters):
         arg_array[2].l = jvm_serialized_parameters
 
         #here we go into java
-        jvm_result = env.CallStaticObjectMethodA(dispatchclass, dispatchmethod, arg_array)
+        jvm_result = env.CallStaticObjectMethodA(jvm.dispatchclass, jvm.dispatchmethod, arg_array)
         exception = env.ExceptionOccurred()
 
         if exception:
             env.ExceptionClear()
 
-            exception_describer_class = env.FindClass("vimjavainterface/ExceptionDescriber")
-            describe_method = env.GetStaticMethodID(exception_describer_class, "describe", "(Ljava/lang/Throwable;)Ljava/lang/String;")
-
             describe_arg_array = (jvalue * 1)()
             describe_arg_array[0].l = exception
 
-            jvm_exception_description = env.CallStaticObjectMethodA(exception_describer_class, describe_method, describe_arg_array)
+            jvm_exception_description = env.CallStaticObjectMethodA(jvm.exception_describer_class, jvm.exception_describe_method, describe_arg_array)
             if env.ExceptionCheck():
                 env.ExceptionClear()
                 raise JavaInvocationError("Exception occurred during execution of java code, but more information could not be obtained")
@@ -104,6 +104,7 @@ def call_java(target, dispatcher, serialized_parameters):
     finally:
         env.PopLocalFrame(None)
 
-def delegate_vim_function_to_java(target, dispatcher, arg_parameter_name = 'a:000'):
+def delegate_vim_function_to_java(target, dispatcher, arg_parameter_name):
     result = call_java(target, dispatcher, vim.eval_as_string(arg_parameter_name))
     vim.command("return eval('%s')" % result.replace("'", "''"))
+
