@@ -19,7 +19,7 @@ function! vimjavainterface#CallJava(target, dispatcher, args)
 endfunction
 
 function! vimjavainterface#CallJavaMethod(class, method, ...)
-    return vimjavainterface#CallJava(a:target . "/" . a:method, '', a:000)
+    return vimjavainterface#CallJava(a:class . "/" . a:method, '', a:000)
 endfunction
 
 
