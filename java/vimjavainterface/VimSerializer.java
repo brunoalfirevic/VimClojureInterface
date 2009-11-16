@@ -1,3 +1,13 @@
+/**
+ *   Copyright (c) Bruno Alfirevic. All rights reserved.
+ *   The use and distribution terms for this software are covered by the
+ *   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+ *   which can be found in the file epl-v10.html at the root of this distribution.
+ *   By using this software in any fashion, you are agreeing to be bound by
+ *   the terms of this license.
+ *   You must not remove this notice, or any other, from this software.
+ **/
+
 package vimjavainterface;
 
 import java.util.ArrayList;
@@ -37,7 +47,7 @@ class VimSerializer {
                 position.skipOne();
                 return result;
             }
-            
+
             case '{': {
                 position.skipOne();
                 position.skip();
@@ -54,10 +64,10 @@ class VimSerializer {
                 position.skipOne();
                 return result;
             }
-            
+
             case '\'': {
                 position.skipOne();
-                
+
                 int stringStart = position.currentPosition();
                 position.skipUntilEndOfString();
                 String result = value.substring(stringStart, position.currentPosition()).replace("''", "'");
@@ -71,13 +81,13 @@ class VimSerializer {
                 position.skipCount(NULL_TOKEN.length());
                 return null;
             }
-            
+
             default: {
                 int numberStart = position.currentPosition();
                 position.skipUntilEndOfNumber();
                 String numberStr = value.substring(numberStart, position.currentPosition() + 1);
                 position.skipOne();
-                
+
                 if (numberStr.contains("."))
                     return Float.parseFloat(numberStr);
 

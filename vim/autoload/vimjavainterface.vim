@@ -11,9 +11,6 @@ finally:
 vimjavainterface.create_jvm()
 EOF
 
-function! vimjavainterface#ForceInit()
-endfunction
-
 function! vimjavainterface#CallJava(class, method, args)
     execute "py vimjavainterface.delegate_vim_function_to_java('" . escape(a:class, "'") . "', '" . escape(a:method, "'") . "', 'a:args')"
 endfunction
