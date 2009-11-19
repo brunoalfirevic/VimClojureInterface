@@ -32,6 +32,12 @@ def vim_safe_eval(env, this, expr):
 
 def vim_safe_command(env, this, cmd):
     execute_vim_action(env, cmd, vim.safe.command)
+
+def vim_on_output(env, this, content):
+    pass
+
+def vim_on_err(env, this, content):
+    pass
 #end implementation of native methods for java Vim class
 
 def create_jvm(jvmlib = None, classpath = None, additional_options = None):
@@ -61,11 +67,15 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     vimcommandfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_command)
     vimsafeevalfunc = JNIFUNCTYPE(jstring, POINTER(JNIEnv), jobject, jstring)(vim_safe_eval)
     vimsafecommandfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_safe_command)
+    vimonoutputfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_on_output)
+    vimonerrfunc = JNIFUNCTYPE(None, POINTER(JNIEnv), jobject, jstring)(vim_on_err)
 
     env.RegisterNative(vimclass, "nativeEval", "(Ljava/lang/String;)Ljava/lang/String;", vimevalfunc)
     env.RegisterNative(vimclass, "nativeCommand", "(Ljava/lang/String;)V", vimcommandfunc)
     env.RegisterNative(vimclass, "nativeSafeEval", "(Ljava/lang/String;)Ljava/lang/String;", vimsafeevalfunc)
     env.RegisterNative(vimclass, "nativeSafeCommand", "(Ljava/lang/String;)V", vimsafecommandfunc)
+    env.RegisterNative(vimclass, "nativeOnOutput", "(Ljava/lang/String;)V", vimonoutputfunc)
+    env.RegisterNative(vimclass, "nativeOnErr", "(Ljava/lang/String;)V", vimonerrfunc)
 
     vm.dispatchclass = env.NewGlobalRef(env.FindClass("vimjavainterface/Dispatcher"))
     vm.dispatchmethod = env.NewGlobalRef(env.GetStaticMethodID(vm.dispatchclass, "dispatch", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"))
@@ -111,7 +121,9 @@ def call_java(targetclass, targetmethod, serialized_parameters):
     finally:
         env.PopLocalFrame(None)
 
-def delegate_vim_function_to_java(targetclass, targetmethod, arg_parameter_name):
-    result = call_java(targetclass, targetmethod, vim.eval_as_string(arg_parameter_name))
+def delegate_vim_function_to_java(targetclass, targetmethod, arg_parameter_expr):
+    result = call_java(targetclass, targetmethod, vim.eval_as_string(arg_parameter_expr))
     vim.command("return eval('%s')" % result.replace("'", "''"))
 
+def capture_jvm_output_streams():
+    call_java('vimjavainterface.StreamCaptor', 'capturetOutputStreams', '[]')

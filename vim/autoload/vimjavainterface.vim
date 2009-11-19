@@ -9,14 +9,18 @@ finally:
     del sys.path[-1:]
 
 vimjavainterface.create_jvm()
+vimjavainterface.capture_jvm_output_streams()
 EOF
 
 function! vimjavainterface#CallJava(class, method, args)
-    execute "py vimjavainterface.delegate_vim_function_to_java('" . escape(a:class, "'") . "', '" . escape(a:method, "'") . "', 'a:args')"
+    py vimjavainterface.delegate_vim_function_to_java(vim.eval('a:class'), vim.eval('a:method'), 'a:args')
 endfunction
 
 function! vimjavainterface#CallJavaMethod(class, method, ...)
     return vimjavainterface#CallJava(a:class, a:method, a:000)
 endfunction
 
+if exists('#User#JvmLoaded')
+    doautocmd User JvmLoaded
+endif
 

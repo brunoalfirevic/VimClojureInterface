@@ -15,6 +15,8 @@ public class Vim {
     private static native void nativeCommand(String command);
     private static native String nativeSafeEval(String expression);
     private static native void nativeSafeCommand(String command);
+    private static native void nativeOnOutput(String content);
+    private static native void nativeOnErr(String content);
 
     public static Object eval(String expression) {
         return VimSerializer.deserializeFromVimScript(nativeEval(expression));
@@ -30,5 +32,13 @@ public class Vim {
 
     public static void safeCommand(String command) {
         nativeSafeCommand(command);
+    }
+
+    public static void onOutput(String content) {
+        nativeOnOutput(content);
+    }
+
+    public static void onErr(String content) {
+        nativeOnErr(content);
     }
 }
