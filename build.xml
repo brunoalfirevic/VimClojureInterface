@@ -78,7 +78,7 @@
   <property name="vim.source.dir" location="vim"/> 
   <property name="java.build.dir" value="build/classes"/>
   <property name="dist.dir" value="dist"/>
-  <property name="vimclojureinterface.jar" value="${dist.dir}/plugin/vimclojureinterface.jar"/>
+  <property name="vimclojureinterface.jar" value="${dist.dir}/autoload/vimclojureinterface.jar"/>
   
   <path id="clojure.classpath">
     <path location="${java.build.dir}" />
