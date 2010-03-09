@@ -23,6 +23,23 @@ public class Dispatcher {
         return VimSerializer.serializeForVimScript(result);
     }
 
+    public static String dispatchInBackground(final String targetClassName, final String targetMethodName, final String args) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try
+                {
+                    dispatch(targetClassName, targetMethodName, args);
+                }
+                catch(Exception ex)
+                {
+                    throw new RuntimeException(ex);
+                }
+            }}).start();
+
+            return VimSerializer.serializeForVimScript(null);
+    }
+
     private static Object dispatchByClassAndMethodName(String targetClassName, String targetMethodName, Collection parameters)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 

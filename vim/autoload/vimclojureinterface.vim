@@ -10,3 +10,7 @@ function! vimclojureinterface#CallClojureFunc(function, ...)
     return vimclojureinterface#CallClojure(a:function, a:000)
 endfunction
 
+function! vimclojureinterface#InitClojureRuntimeInBackground()
+    return vimjavainterface#CallJavaMethodInBackground('vimclojureinterface.Dispatcher', 'dispatch', 'vimclojureinterface/repl-eval', ['nil'])
+endfunction
+

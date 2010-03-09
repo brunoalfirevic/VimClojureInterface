@@ -79,6 +79,7 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
 
     vm.dispatchclass = env.NewGlobalRef(env.FindClass("vimjavainterface/Dispatcher"))
     vm.dispatchmethod = env.NewGlobalRef(env.GetStaticMethodID(vm.dispatchclass, "dispatch", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"))
+    vm.dispatch_in_bg_method = env.NewGlobalRef(env.GetStaticMethodID(vm.dispatchclass, "dispatchInBackground", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"))
     vm.exception_describer_class = env.NewGlobalRef(env.FindClass("vimjavainterface/ExceptionDescriber"))
     vm.exception_describe_method = env.NewGlobalRef(env.GetStaticMethodID(vm.exception_describer_class, "describe", "(Ljava/lang/Throwable;)Ljava/lang/String;"))
     vm.vim_exception_class = env.NewGlobalRef(env.FindClass("vimjavainterface/VimException"))
@@ -86,7 +87,7 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
     jvm = vm
     return vm
 
-def call_java(targetclass, targetmethod, serialized_parameters):
+def call_java(targetclass, targetmethod, serialized_parameters, call_in_background = False):
     env = jvm.GetEnv()
     temporary_attached_thread = False
 
@@ -106,8 +107,13 @@ def call_java(targetclass, targetmethod, serialized_parameters):
         arg_array[1].l = jvm_target_method
         arg_array[2].l = jvm_serialized_parameters
 
+        if call_in_background:
+            dispatch_method = jvm.dispatch_in_bg_method
+        else:
+            dispatch_method = jvm.dispatchmethod
+
         #here we go into java
-        jvm_result = env.CallStaticObjectMethodA(jvm.dispatchclass, jvm.dispatchmethod, arg_array)
+        jvm_result = env.CallStaticObjectMethodA(jvm.dispatchclass, dispatch_method, arg_array)
         exception = env.ExceptionOccurred()
 
         if exception:
@@ -129,8 +135,8 @@ def call_java(targetclass, targetmethod, serialized_parameters):
         if temporary_attached_thread:
             jvm.DetachCurrentThread()
 
-def delegate_vim_function_to_java(targetclass, targetmethod, arg_parameter_expr):
-    result = call_java(targetclass, targetmethod, vim.eval_as_string(arg_parameter_expr))
+def delegate_vim_function_to_java(targetclass, targetmethod, arg_parameter_expr, call_in_background = False):
+    result = call_java(targetclass, targetmethod, vim.eval_as_string(arg_parameter_expr), call_in_background)
     vim.command("return eval('%s')" % result.replace("'", "''"))
 
 def capture_jvm_output_streams():

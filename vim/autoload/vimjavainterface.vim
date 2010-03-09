@@ -19,8 +19,16 @@ function! vimjavainterface#CallJava(class, method, args)
     py vimjavainterface.delegate_vim_function_to_java(vim.eval('a:class'), vim.eval('a:method'), 'a:args')
 endfunction
 
+function! vimjavainterface#CallJavaInBackground(class, method, args)
+    py vimjavainterface.delegate_vim_function_to_java(vim.eval('a:class'), vim.eval('a:method'), 'a:args', True)
+endfunction
+
 function! vimjavainterface#CallJavaMethod(class, method, ...)
     return vimjavainterface#CallJava(a:class, a:method, a:000)
+endfunction
+
+function! vimjavainterface#CallJavaMethodInBackground(class, method, ...)
+    return vimjavainterface#CallJavaInBackground(a:class, a:method, a:000)
 endfunction
 
 if exists('#User#JvmLoaded')
