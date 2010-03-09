@@ -12,6 +12,9 @@ vimjavainterface.create_jvm()
 vimjavainterface.capture_jvm_output_streams()
 EOF
 
+function! vimjavainterface#InitJvm()
+endfunction
+
 function! vimjavainterface#CallJava(class, method, args)
     py vimjavainterface.delegate_vim_function_to_java(vim.eval('a:class'), vim.eval('a:method'), 'a:args')
 endfunction

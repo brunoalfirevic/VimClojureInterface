@@ -182,10 +182,21 @@ class JNIEnv(Structure):
 class JavaVM(Structure):
     _fields_ = [("functions", POINTER(c_void_p))]
 
+    def AttachCurrentThread(self):
+        env_ptr = POINTER(JNIEnv)()
+        if self.__getFunc(4, POINTER(POINTER(JNIEnv)), POINTER(c_void_p))(byref(env_ptr), None) != JNI_OK:
+            return None
+
+        return env_ptr.contents
+
+    def DetachCurrentThread(self):
+        self.__getFunc(5)()
+
     def GetEnv(self):
         env_ptr = POINTER(JNIEnv)()
         if self.__getFunc(6, POINTER(POINTER(JNIEnv)), jint)(byref(env_ptr), self.version) != JNI_OK:
             return None
+
         return env_ptr.contents
 
     @staticmethod

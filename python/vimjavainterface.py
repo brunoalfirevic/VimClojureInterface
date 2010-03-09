@@ -88,6 +88,12 @@ def create_jvm(jvmlib = None, classpath = None, additional_options = None):
 
 def call_java(targetclass, targetmethod, serialized_parameters):
     env = jvm.GetEnv()
+    temporary_attached_thread = False
+
+    if env == None:
+        env = jvm.AttachCurrentThread()
+        temporary_attached_thread = True
+
     env.PushLocalFrame(15)
 
     try:
@@ -120,6 +126,8 @@ def call_java(targetclass, targetmethod, serialized_parameters):
         return env.GetPythonString(jvm_result)
     finally:
         env.PopLocalFrame(None)
+        if temporary_attached_thread:
+            jvm.DetachCurrentThread()
 
 def delegate_vim_function_to_java(targetclass, targetmethod, arg_parameter_expr):
     result = call_java(targetclass, targetmethod, vim.eval_as_string(arg_parameter_expr))
