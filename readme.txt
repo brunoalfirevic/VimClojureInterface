@@ -1,1 +1,1 @@
-VimClojureInterface is a Vim plugin that add support for scripting Vim in Java and Clojure
+VimClojureInterface is a Vim plugin that adds support for scripting Vim in Java and Clojure
